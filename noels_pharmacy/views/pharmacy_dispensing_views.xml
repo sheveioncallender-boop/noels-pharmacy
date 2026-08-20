@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pharmacy_dispensing_search" model="ir.ui.view">
+        <field name="name">pharmacy.dispensing.search</field>
+        <field name="model">pharmacy.dispensing</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="prescription_id"/>
+                <field name="patient_id"/>
+                <field name="pharmacist_id"/>
+                <field name="source_reference"/>
+                <filter name="confirmed" string="Confirmed" domain="[('state', '=', 'confirmed')]"/>
+                <filter name="reversed" string="Reversed" domain="[('state', '=', 'reversed')]"/>
+                <group expand="0" string="Group By">
+                    <filter name="group_pharmacist" string="Pharmacist" context="{'group_by': 'pharmacist_id'}"/>
+                    <filter name="group_date" string="Dispensed Date" context="{'group_by': 'dispensed_at:day'}"/>
+                    <filter name="group_source" string="Source" context="{'group_by': 'source_type'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_pharmacy_dispensing_list" model="ir.ui.view">
+        <field name="name">pharmacy.dispensing.list</field>
+        <field name="model">pharmacy.dispensing</field>
+        <field name="arch" type="xml">
+            <list decoration-success="state == 'confirmed'" decoration-muted="state == 'reversed'">
+                <field name="name"/>
+                <field name="prescription_id"/>
+                <field name="patient_id"/>
+                <field name="dispensed_at"/>
+                <field name="pharmacist_initials"/>
+                <field name="source_type"/>
+                <field name="source_reference"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pharmacy_dispensing_form" model="ir.ui.view">
+        <field name="name">pharmacy.dispensing.form</field>
+        <field name="model">pharmacy.dispensing</field>
+        <field name="arch" type="xml">
+            <form string="Dispensing">
+                <header>
+                    <button name="action_confirm" type="object" string="Confirm Dispensing" class="btn-primary" groups="noels_pharmacy.group_pharmacy_pharmacist" invisible="state != 'draft'"/>
+                    <button name="action_reverse" type="object" string="Reverse" groups="noels_pharmacy.group_pharmacy_manager" invisible="state != 'confirmed'" confirm="This creates reversal entries but does not delete the original dispensing. Continue?"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,confirmed,reversed"/>
+                </header>
+                <sheet>
+                    <widget name="web_ribbon" title="Reversed" bg_color="text-bg-danger" invisible="state != 'reversed'"/>
+                    <div class="oe_title"><h1><field name="name" readonly="1"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="prescription_id" readonly="state != 'draft'" domain="[('state', 'in', ('approved', 'partially_dispensed'))]"/>
+                            <field name="patient_id" readonly="1"/>
+                            <field name="prescriber_id" readonly="1"/>
+                            <field name="pharmacist_id" readonly="state != 'draft'" domain="[('role', 'in', ('pharmacist', 'manager')), ('active', '=', True)]"/>
+                        </group>
+                        <group>
+                            <field name="dispensed_at" readonly="state != 'draft'"/>
+                            <field name="source_type" readonly="state != 'draft'"/>
+                            <field name="source_reference" readonly="state != 'draft'"/>
+                            <field name="company_id" groups="base.group_multi_company" readonly="1"/>
+                        </group>
+                    </group>
+                    <field name="line_ids" readonly="state != 'draft'" context="{'default_dispensing_id': id}">
+                        <list editable="bottom">
+                            <field name="prescription_line_id" domain="[('prescription_id', '=', parent.prescription_id)]"/>
+                            <field name="product_id"/>
+                            <field name="quantity"/>
+                            <field name="product_uom_id"/>
+                            <field name="lot_id"/>
+                            <field name="remaining_after" readonly="1"/>
+                            <field name="dispensing_instructions"/>
+                        </list>
+                    </field>
+                    <group invisible="state == 'draft'">
+                        <field name="reversal_reason" readonly="state == 'reversed'" placeholder="Required before reversal..."/>
+                        <field name="reversed_by_id" readonly="1" invisible="state != 'reversed'"/>
+                        <field name="reversed_at" readonly="1" invisible="state != 'reversed'"/>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_pharmacy_dispensing" model="ir.actions.act_window">
+        <field name="name">Dispensing</field>
+        <field name="res_model">pharmacy.dispensing</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_pharmacy_dispensing_search"/>
+    </record>
+</odoo>
+
