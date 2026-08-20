@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="product_prescription_notice" inherit_id="website_sale.product" name="Pharmacy prescription notice">
+        <xpath expr="//div[@id='o_wsale_cta_wrapper']" position="before">
+            <div t-if="product.is_pharmacy_item and product.pharmacy_rx_required" class="alert alert-info mb-3" role="alert">
+                <i class="fa fa-file-text-o me-2"/>A valid prescription is required for this medicine. You can securely upload it from your cart.
+            </div>
+            <div t-elif="product.is_pharmacy_item" class="small text-success mb-3">
+                <i class="fa fa-check-circle me-1"/>Pharmacy medicine
+            </div>
+        </xpath>
+    </template>
+
+    <template id="cart_prescription_notice" inherit_id="website_sale.cart" name="Cart prescription upload">
+        <xpath expr="//t[@t-call='website_sale.cart_lines']" position="before">
+            <div t-if="website_sale_order.pharmacy_requires_prescription" class="alert alert-warning" role="alert">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                    <div>
+                        <strong><i class="fa fa-file-text-o me-2"/>Prescription required</strong>
+                        <div t-if="website_sale_order.pharmacy_prescription_id" class="small mt-1">
+                            Uploaded: <span t-field="website_sale_order.pharmacy_prescription_id.name"/> ·
+                            <span t-field="website_sale_order.pharmacy_prescription_id.state"/>
+                        </div>
+                        <div t-else="" class="small mt-1">Upload the doctor's script before this order can be approved.</div>
+                    </div>
+                    <a t-if="request.env.user._is_public()" class="btn btn-outline-primary" href="/web/login?redirect=/pharmacy/prescription/upload">Sign in to upload</a>
+                    <a t-elif="not website_sale_order.pharmacy_prescription_id" class="btn btn-primary" href="/pharmacy/prescription/upload">Upload Prescription</a>
+                    <a t-else="" class="btn btn-outline-primary" href="/my/prescriptions">Prescription History</a>
+                </div>
+            </div>
+        </xpath>
+    </template>
+
+    <template id="portal_home_prescriptions" inherit_id="portal.portal_my_home" name="Prescription portal card">
+        <xpath expr="//div[@id='portal_common_category']" position="inside">
+            <t t-call="portal.portal_docs_entry">
+                <t t-set="title">Prescriptions</t>
+                <t t-set="text">View your prescription and dispensing history</t>
+                <t t-set="url" t-value="'/my/prescriptions'"/>
+                <t t-set="config_card" t-value="True"/>
+            </t>
+        </xpath>
+    </template>
+
+    <template id="prescription_upload_page" name="Upload Prescription">
+        <t t-call="website.layout">
+            <div id="wrap" class="oe_structure">
+                <section class="container py-5" style="max-width: 900px;">
+                    <div class="d-flex align-items-center gap-3 border-bottom pb-3 mb-4">
+                        <img src="/noels_pharmacy/static/description/icon.png" width="58" height="58" alt="Noel's Pharmacy"/>
+                        <div><h1 class="h3 mb-1">Upload Prescription</h1><p class="text-muted mb-0">Noel's Pharmacy &amp; Wellness Center Ltd</p></div>
+                    </div>
+                    <div t-if="error" class="alert alert-danger">
+                        <t t-if="error == 'file'">Choose a prescription image or PDF.</t>
+                        <t t-elif="error == 'type'">Use a PDF, JPG, PNG, or WebP file.</t>
+                        <t t-elif="error == 'size'">The upload must be 10 MB or smaller.</t>
+                    </div>
+                    <form action="/pharmacy/prescription/upload/submit" method="post" enctype="multipart/form-data" class="card shadow-sm">
+                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                        <div class="card-body p-4">
+                            <div class="row g-3">
+                                <div class="col-md-6"><label class="form-label">Patient</label><input class="form-control" t-att-value="order.partner_id.name" readonly="readonly"/></div>
+                                <div class="col-md-3"><label class="form-label">Date of Birth</label><input type="date" name="date_of_birth" class="form-control"/></div>
+                                <div class="col-md-3"><label class="form-label">Prescription Date</label><input type="date" name="prescription_date" class="form-control" required="required"/></div>
+                                <div class="col-md-6"><label class="form-label">Allergy Status</label><select name="allergy_status" class="form-select"><option value="unknown">Not Confirmed</option><option value="none">No Known Drug Allergies</option><option value="known">Known Allergies</option></select></div>
+                                <div class="col-md-6"><label class="form-label">Allergy / Reaction</label><input name="allergy_name" class="form-control" placeholder="Complete when an allergy is known"/></div>
+                                <div class="col-md-8"><label class="form-label">Doctor / Prescriber</label><input name="doctor_name" class="form-control" required="required"/></div>
+                                <div class="col-md-4"><label class="form-label">Licence No.</label><input name="doctor_license" class="form-control"/></div>
+                                <div class="col-md-8"><label class="form-label">Diagnosis / Notes</label><textarea name="diagnosis_notes" rows="2" class="form-control"/></div>
+                                <div class="col-md-4"><label class="form-label">Refills Allowed</label><input type="number" name="refills_allowed" min="0" step="1" value="0" class="form-control"/></div>
+                                <div class="col-12"><label class="form-label">Prescription File</label><input type="file" name="prescription_file" accept="image/jpeg,image/png,image/webp,application/pdf" class="form-control" required="required"/><div class="form-text">PDF, JPG, PNG, or WebP; maximum 10 MB.</div></div>
+                            </div>
+                            <h2 class="h5 mt-4">Medicines in this order</h2>
+                            <ul class="list-group list-group-flush"><li t-foreach="pharmacy_lines" t-as="line" class="list-group-item px-0 d-flex justify-content-between"><span t-field="line.product_id"/><span t-field="line.product_uom_qty"/></li></ul>
+                        </div>
+                        <div class="card-footer bg-white p-4 d-flex justify-content-end gap-2"><a href="/shop/cart" class="btn btn-secondary">Cancel</a><button type="submit" class="btn btn-primary">Upload Securely</button></div>
+                    </form>
+                </section>
+            </div>
+        </t>
+    </template>
+
+    <template id="portal_my_prescriptions" name="My Prescriptions">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <t t-call="portal.portal_searchbar"><t t-set="title">My Prescriptions</t></t>
+            <div t-if="not prescriptions" class="alert alert-info">No prescription history is available yet.</div>
+            <div t-else="" class="table-responsive">
+                <table class="table table-hover"><thead><tr><th>Prescription</th><th>Patient</th><th>Doctor</th><th>Date</th><th>Status</th></tr></thead><tbody>
+                    <tr t-foreach="prescriptions" t-as="rx"><td><a t-att-href="'/my/prescriptions/%s' % rx.id" t-field="rx.name"/></td><td t-field="rx.patient_id.name"/><td t-field="rx.prescriber_id.name"/><td t-field="rx.prescription_date"/><td><span class="badge text-bg-secondary" t-field="rx.state"/></td></tr>
+                </tbody></table>
+            </div>
+            <t t-call="portal.pager"/>
+        </t>
+    </template>
+
+    <template id="portal_prescription_detail" name="Prescription Detail">
+        <t t-call="portal.portal_layout">
+            <div class="d-flex justify-content-between align-items-center mb-4"><div><a href="/my/prescriptions" class="small">← Prescriptions</a><h1 class="h3 mt-2" t-field="prescription.name"/></div><span class="badge text-bg-secondary" t-field="prescription.state"/></div>
+            <div class="card mb-4"><div class="card-body row g-3"><div class="col-md-4"><small class="text-muted d-block">Patient</small><span t-field="prescription.patient_id.name"/></div><div class="col-md-4"><small class="text-muted d-block">Doctor</small><span t-field="prescription.prescriber_id.name"/></div><div class="col-md-4"><small class="text-muted d-block">Prescription Date</small><span t-field="prescription.prescription_date"/></div></div></div>
+            <div t-if="prescription.diagnosis_notes" class="alert alert-light border"><strong>Diagnosis / Notes:</strong> <span t-field="prescription.diagnosis_notes"/></div>
+            <div class="table-responsive"><table class="table"><thead><tr><th>Medicine</th><th>Directions</th><th class="text-end">Authorised</th><th class="text-end">Dispensed</th><th class="text-end">Remaining</th></tr></thead><tbody><tr t-foreach="prescription.line_ids" t-as="line"><td t-field="line.product_id"/><td t-field="line.dispensing_instructions"/><td class="text-end" t-field="line.authorized_qty"/><td class="text-end" t-field="line.qty_dispensed"/><td class="text-end" t-field="line.remaining_qty"/></tr></tbody></table></div>
+        </t>
+    </template>
+</odoo>
