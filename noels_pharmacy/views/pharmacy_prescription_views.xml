@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pharmacy_prescription_search" model="ir.ui.view">
+        <field name="name">pharmacy.prescription.search</field>
+        <field name="model">pharmacy.prescription</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="temporary_reference"/>
+                <field name="patient_id"/>
+                <field name="prescriber_id"/>
+                <field name="prescription_date"/>
+                <field name="external_reference"/>
+                <filter name="awaiting" string="Awaiting Review" domain="[('state', '=', 'awaiting_review')]"/>
+                <filter name="open_balance" string="Refill / Balance Available" domain="[('state', '=', 'partially_dispensed')]"/>
+                <filter name="follow_up_due" string="Follow-up Pending" domain="[('state', '=', 'partially_dispensed'), ('partial_fill_open', '=', True), ('follow_up_status', 'in', ('pending', 'contacted'))]"/>
+                <filter name="dispensed" string="Dispensed" domain="[('state', '=', 'dispensed')]"/>
+                <group>
+                    <filter name="group_patient" string="Patient" context="{'group_by': 'patient_id'}"/>
+                    <filter name="group_prescriber" string="Prescriber" context="{'group_by': 'prescriber_id'}"/>
+                    <filter name="group_state" string="Status" context="{'group_by': 'state'}"/>
+                    <filter name="group_date" string="Prescription Date" context="{'group_by': 'prescription_date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_pharmacy_prescription_list" model="ir.ui.view">
+        <field name="name">pharmacy.prescription.list</field>
+        <field name="model">pharmacy.prescription</field>
+        <field name="arch" type="xml">
+            <list decoration-warning="state == 'awaiting_review'" decoration-success="state == 'dispensed'" decoration-muted="state == 'cancelled'">
+                <field name="name"/>
+                <field name="patient_id"/>
+                <field name="prescriber_id"/>
+                <field name="prescription_date"/>
+                <field name="valid_until" optional="show"/>
+                <field name="refills_allowed"/>
+                <field name="remaining_total_qty" optional="show"/>
+                <field name="follow_up_date" optional="hide"/>
+                <field name="approved_by_id" optional="show"/>
+                <field name="state"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pharmacy_prescription_form" model="ir.ui.view">
+        <field name="name">pharmacy.prescription.form</field>
+        <field name="model">pharmacy.prescription</field>
+        <field name="arch" type="xml">
+            <form string="Prescription">
+                <header>
+                    <button name="action_submit" type="object" string="Send to Pharmacist" class="btn-primary" groups="noels_pharmacy.group_pharmacy_user,!noels_pharmacy.group_pharmacy_pharmacist" invisible="state != 'draft'"/>
+                    <button name="action_approve_prepare_print" type="object" string="Approve, Prepare &amp; Print" class="btn-primary" groups="noels_pharmacy.group_pharmacy_pharmacist" invisible="state not in ('draft', 'awaiting_review', 'approved')"/>
+                    <button name="action_prepare_balance_and_print" type="object" string="Prepare Balance &amp; Print" class="btn-primary" groups="noels_pharmacy.group_pharmacy_pharmacist" invisible="state != 'partially_dispensed' or not partial_fill_open"/>
+                    <button name="action_prepare_balance_and_print" type="object" string="Prepare Refill &amp; Print" class="btn-primary" groups="noels_pharmacy.group_pharmacy_pharmacist" invisible="state != 'partially_dispensed' or partial_fill_open"/>
+                    <button name="action_mark_follow_up_contacted" type="object" string="Record Phone / WhatsApp Contact" invisible="state != 'partially_dispensed' or not partial_fill_open"/>
+                    <button name="action_send_partial_fill_notification" type="object" string="Email Patient" invisible="state != 'partially_dispensed' or not partial_fill_open or not patient_email"/>
+                    <button name="action_reset_to_draft" type="object" string="Return to Draft" groups="noels_pharmacy.group_pharmacy_pharmacist" invisible="state not in ('awaiting_review', 'approved')"/>
+                    <button name="action_print_labels" type="object" string="Reprint Latest Labels" groups="noels_pharmacy.group_pharmacy_pharmacist" invisible="state in ('draft', 'awaiting_review', 'cancelled')"/>
+                    <button name="action_cancel" type="object" string="Cancel" invisible="state in ('dispensed', 'cancelled')" confirm="The prescription number and audit history will remain visible. Continue?"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,awaiting_review,approved,partially_dispensed,dispensed,cancelled"/>
+                    <field name="partial_fill_open" invisible="1"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button type="object" name="action_view_dispensing" class="oe_stat_button" icon="fa-medkit">
+                            <field name="dispensing_count" widget="statinfo" string="Dispensing"/>
+                        </button>
+                        <button type="object" name="action_view_alerts" class="oe_stat_button" icon="fa-exclamation-triangle">
+                            <field name="alert_count" widget="statinfo" string="Alerts"/>
+                        </button>
+                    </div>
+                    <widget name="web_ribbon" title="Cancelled" bg_color="text-bg-danger" invisible="state != 'cancelled'"/>
+                    <div class="oe_title">
+                        <label for="name" string="Prescription"/>
+                        <h1><field name="name" readonly="1"/></h1>
+                        <span class="text-muted">Original: <field name="temporary_reference" readonly="1" class="oe_inline"/></span>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="patient_id" readonly="state != 'draft'"/>
+                            <field name="patient_phone" readonly="1"/>
+                            <field name="patient_mobile" readonly="1"/>
+                            <field name="patient_email" readonly="1"/>
+                            <field name="patient_allergy_status" readonly="1"/>
+                            <field name="patient_allergy_summary" readonly="1" class="text-danger"/>
+                            <field name="purchaser_partner_id" readonly="state != 'draft'"/>
+                            <field name="prescriber_id" readonly="state != 'draft'"/>
+                            <field name="external_reference" readonly="state != 'draft'"/>
+                        </group>
+                        <group>
+                            <field name="prescription_date" readonly="state != 'draft'"/>
+                            <field name="valid_until" readonly="state != 'draft'"/>
+                            <field name="source_type" readonly="state != 'draft'"/>
+                            <field name="refills_allowed" readonly="state != 'draft'"/>
+                            <field name="company_id" groups="base.group_multi_company" readonly="state != 'draft'"/>
+                        </group>
+                    </group>
+                    <field name="diagnosis_notes" readonly="state != 'draft'" placeholder="Diagnosis or prescription notes..."/>
+                    <notebook>
+                        <page string="Medicines" name="medicines">
+                            <field name="line_ids" readonly="state != 'draft'" context="{'default_prescription_id': id}">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="product_id"/>
+                                    <field name="substituted_product_id" optional="hide"/>
+                                    <field name="substitution_reason" optional="hide"/>
+                                    <field name="prescribed_qty"/>
+                                    <field name="quantity_to_supply" string="Supply Now"/>
+                                    <field name="product_uom_id"/>
+                                    <field name="authorized_qty" readonly="1"/>
+                                    <field name="qty_dispensed" readonly="1"/>
+                                    <field name="remaining_qty" readonly="1"/>
+                                    <field name="dose" optional="show"/>
+                                    <field name="route" optional="show"/>
+                                    <field name="frequency" optional="show"/>
+                                    <field name="duration" optional="show"/>
+                                    <field name="dispensing_instructions"/>
+                                    <field name="directions_pending" optional="show"/>
+                                    <field name="caution_instructions" optional="hide"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Prescription Document" name="documents">
+                            <field name="attachment_ids" widget="many2many_binary" readonly="state == 'cancelled'"/>
+                        </page>
+                        <page string="Partial Fill Follow-up" name="partial_follow_up" invisible="state != 'partially_dispensed' or not partial_fill_open">
+                            <group>
+                                <group>
+                                    <field name="partial_fill_remaining_qty" readonly="1"/>
+                                    <field name="remaining_total_qty" readonly="1" string="Total Authorized Balance"/>
+                                    <field name="outstanding_medicines" readonly="1"/>
+                                    <field name="last_dispensed_at" readonly="1"/>
+                                    <field name="follow_up_date"/>
+                                </group>
+                                <group>
+                                    <field name="follow_up_status" readonly="1"/>
+                                    <field name="follow_up_count" readonly="1"/>
+                                    <field name="last_follow_up_at" readonly="1"/>
+                                    <field name="last_follow_up_by_id" readonly="1"/>
+                                </group>
+                            </group>
+                            <field name="line_ids" context="{'default_prescription_id': id}">
+                                <list editable="bottom" create="0" delete="0">
+                                    <field name="product_id" readonly="1"/>
+                                    <field name="remaining_qty" readonly="1" string="Total Authorized Balance"/>
+                                    <field name="partial_fill_qty" readonly="1"/>
+                                    <field name="quantity_to_supply" string="Supply Now"/>
+                                    <field name="product_uom_id" readonly="1"/>
+                                </list>
+                            </field>
+                            <field name="follow_up_notes" placeholder="Notes from patient contact or supply follow-up..."/>
+                        </page>
+                        <page string="Clinical Alerts" name="alerts">
+                            <field name="clinical_alert_ids" readonly="1">
+                                <list decoration-danger="severity == 'blocking' and status == 'open'" decoration-warning="severity == 'warning' and status == 'open'" decoration-muted="status == 'superseded'">
+                                    <field name="alert_type"/>
+                                    <field name="severity"/>
+                                    <field name="title"/>
+                                    <field name="status"/>
+                                    <field name="overridden_by_id" optional="show"/>
+                                    <field name="overridden_at" optional="hide"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Approval &amp; Cancellation" name="approval">
+                            <group>
+                                <group>
+                                    <field name="approved_by_id" readonly="1"/>
+                                    <field name="approved_at" readonly="1"/>
+                                </group>
+                                <group>
+                                    <field name="cancellation_reason" readonly="state == 'cancelled'" placeholder="Required before cancellation..."/>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_pharmacy_prescription" model="ir.actions.act_window">
+        <field name="name">Prescriptions</field>
+        <field name="res_model">pharmacy.prescription</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_pharmacy_prescription_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Capture the first prescription</p>
+            <p>Capture and approve the prescription here, then prepare and print its POS checkout labels.</p>
+        </field>
+    </record>
+
+    <record id="view_pharmacy_partial_fill_list" model="ir.ui.view">
+        <field name="name">pharmacy.prescription.partial.fill.list</field>
+        <field name="model">pharmacy.prescription</field>
+        <field name="arch" type="xml">
+            <list string="Partial Fills" create="0" decoration-danger="follow_up_status == 'pending'" decoration-warning="follow_up_status == 'contacted'">
+                <field name="name" string="RX Number"/>
+                <field name="patient_id"/>
+                <field name="patient_phone"/>
+                <field name="patient_email" optional="hide"/>
+                <field name="outstanding_medicines"/>
+                <field name="partial_fill_remaining_qty"/>
+                <field name="remaining_total_qty" optional="hide"/>
+                <field name="last_dispensed_at"/>
+                <field name="follow_up_date"/>
+                <field name="follow_up_status"/>
+                <field name="follow_up_count" optional="show"/>
+                <button name="action_mark_follow_up_contacted" type="object" string="Contacted" icon="fa-phone"/>
+                <button name="action_prepare_balance_and_print" type="object" string="Prepare Balance" icon="fa-print" groups="noels_pharmacy.group_pharmacy_pharmacist"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_pharmacy_partial_fills" model="ir.actions.act_window">
+        <field name="name">Partial Fills</field>
+        <field name="res_model">pharmacy.prescription</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="view_pharmacy_partial_fill_list"/>
+        <field name="search_view_id" ref="view_pharmacy_prescription_search"/>
+        <field name="domain">[('state', '=', 'partially_dispensed'), ('partial_fill_open', '=', True)]</field>
+        <field name="context">{'search_default_follow_up_due': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No partial prescriptions need follow-up</p>
+            <p>Outstanding balances appear here automatically after a partial sale.</p>
+        </field>
+    </record>
+</odoo>
