@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_partner_form_pharmacy" model="ir.ui.view">
+        <field name="name">res.partner.form.pharmacy</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_open_pharmacy_patient" type="object" class="oe_stat_button" icon="fa-medkit" groups="noels_pharmacy.group_pharmacy_user">
+                    <field name="pharmacy_patient_count" widget="statinfo" string="Patient Profile"/>
+                </button>
+                <button name="action_view_pharmacy_purchased_prescriptions" type="object" class="oe_stat_button" icon="fa-file-text-o" groups="noels_pharmacy.group_pharmacy_user" invisible="pharmacy_purchased_prescription_count == 0">
+                    <field name="pharmacy_purchased_prescription_count" widget="statinfo" string="Prescriptions"/>
+                </button>
+            </xpath>
+        </field>
+    </record>
+</odoo>
