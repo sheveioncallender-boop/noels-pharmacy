@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_pharmacy_root"
+              name="Noel's Pharmacy"
+              action="action_pharmacy_prescription"
+              sequence="5"
+              web_icon="noels_pharmacy,static/description/icon.png"
+              groups="noels_pharmacy.group_pharmacy_user,noels_pharmacy.group_pharmacy_auditor"/>
+
+    <menuitem id="menu_pharmacy_operations" name="Operations" parent="menu_pharmacy_root" sequence="10"/>
+    <menuitem id="menu_pharmacy_prescriptions" name="Prescriptions" parent="menu_pharmacy_operations" action="action_pharmacy_prescription" sequence="10"/>
+    <menuitem id="menu_pharmacy_dispensing" name="Dispensing" parent="menu_pharmacy_operations" action="action_pharmacy_dispensing" sequence="20"/>
+    <menuitem id="menu_pharmacy_patients" name="Patients" parent="menu_pharmacy_operations" action="action_pharmacy_patient" sequence="30"/>
+    <menuitem id="menu_pharmacy_medicines" name="Medicines" parent="menu_pharmacy_operations" action="action_pharmacy_medicine" sequence="40"/>
+
+    <menuitem id="menu_pharmacy_registers" name="Registers" parent="menu_pharmacy_root" sequence="20"/>
+    <menuitem id="menu_pharmacy_register_antibiotic" name="Antibiotics" parent="menu_pharmacy_registers" action="action_pharmacy_register_antibiotic" sequence="10"/>
+    <menuitem id="menu_pharmacy_register_controlled" name="Controlled Drugs" parent="menu_pharmacy_registers" action="action_pharmacy_register_controlled" sequence="20"/>
+    <menuitem id="menu_pharmacy_register_narcotic" name="Narcotics" parent="menu_pharmacy_registers" action="action_pharmacy_register_narcotic" sequence="30"/>
+    <menuitem id="menu_pharmacy_register_all" name="All Register Entries" parent="menu_pharmacy_registers" action="action_pharmacy_register_all" sequence="40" groups="noels_pharmacy.group_pharmacy_manager,noels_pharmacy.group_pharmacy_auditor"/>
+
+    <menuitem id="menu_pharmacy_review" name="Review" parent="menu_pharmacy_root" sequence="30"/>
+    <menuitem id="menu_pharmacy_alerts" name="Clinical Alerts" parent="menu_pharmacy_review" action="action_pharmacy_clinical_alert" sequence="10"/>
+    <menuitem id="menu_pharmacy_audit" name="Audit Log" parent="menu_pharmacy_review" action="action_pharmacy_audit_log" sequence="20" groups="noels_pharmacy.group_pharmacy_manager,noels_pharmacy.group_pharmacy_auditor"/>
+
+    <menuitem id="menu_pharmacy_configuration" name="Configuration" parent="menu_pharmacy_root" sequence="90" groups="noels_pharmacy.group_pharmacy_manager"/>
+    <menuitem id="menu_pharmacy_prescribers" name="Prescribers" parent="menu_pharmacy_configuration" action="action_pharmacy_prescriber" sequence="10"/>
+    <menuitem id="menu_pharmacy_staff" name="Pharmacy Staff" parent="menu_pharmacy_configuration" action="action_pharmacy_staff" sequence="20"/>
+    <menuitem id="menu_pharmacy_ingredients" name="Active Ingredients" parent="menu_pharmacy_configuration" action="action_pharmacy_ingredient" sequence="30"/>
+    <menuitem id="menu_pharmacy_therapeutic_classes" name="Therapeutic Classes" parent="menu_pharmacy_configuration" action="action_pharmacy_therapeutic_class" sequence="40"/>
+    <menuitem id="menu_pharmacy_interactions" name="Interaction Rules" parent="menu_pharmacy_configuration" action="action_pharmacy_interaction_rule" sequence="50"/>
+    <menuitem id="menu_pharmacy_register_types" name="Register Types" parent="menu_pharmacy_configuration" action="action_pharmacy_register_type" sequence="60"/>
+</odoo>
+
