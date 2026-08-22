@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="paperformat_pharmacy_label" model="report.paperformat">
+        <field name="name">Noel's Pharmacy Medication Label 3 x 2</field>
+        <field name="default" eval="False"/>
+        <field name="format">custom</field>
+        <field name="page_height">50.8</field>
+        <field name="page_width">76.2</field>
+        <field name="orientation">Landscape</field>
+        <field name="margin_top">2</field>
+        <field name="margin_bottom">2</field>
+        <field name="margin_left">2</field>
+        <field name="margin_right">2</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">0</field>
+        <field name="dpi">96</field>
+    </record>
+
+    <record id="paperformat_pharmacy_label_4x2" model="report.paperformat">
+        <field name="name">Noel's Pharmacy Medication Label 4 x 2</field>
+        <field name="default" eval="False"/>
+        <field name="format">custom</field>
+        <field name="page_height">50.8</field>
+        <field name="page_width">101.6</field>
+        <field name="orientation">Landscape</field>
+        <field name="margin_top">2</field>
+        <field name="margin_bottom">2</field>
+        <field name="margin_left">2</field>
+        <field name="margin_right">2</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">0</field>
+        <field name="dpi">96</field>
+    </record>
+
+    <record id="action_report_pharmacy_label" model="ir.actions.report">
+        <field name="name">Medication Labels</field>
+        <field name="model">pharmacy.dispensing.line</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">noels_pharmacy.report_pharmacy_medication_label</field>
+        <field name="report_file">noels_pharmacy.report_pharmacy_medication_label</field>
+        <field name="paperformat_id" ref="paperformat_pharmacy_label"/>
+        <field name="print_report_name">'Medication Labels - %s' % (object.dispensing_id.prescription_id.name)</field>
+    </record>
+
+    <record id="action_report_pharmacy_label_4x2" model="ir.actions.report">
+        <field name="name">Medication Labels 4 x 2</field>
+        <field name="model">pharmacy.dispensing.line</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">noels_pharmacy.report_pharmacy_medication_label</field>
+        <field name="report_file">noels_pharmacy.report_pharmacy_medication_label</field>
+        <field name="paperformat_id" ref="paperformat_pharmacy_label_4x2"/>
+        <field name="print_report_name">'Medication Labels 4 x 2 - %s' % (object.dispensing_id.prescription_id.name)</field>
+    </record>
+
+    <template id="report_pharmacy_medication_label">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="line">
+                <t t-set="fill" t-value="line.dispensing_id"/>
+                <t t-set="rx" t-value="fill.prescription_id"/>
+                <t t-set="patient_partner" t-value="rx.patient_id.partner_id"/>
+                <t t-set="pharmacy_partner" t-value="fill.company_id.partner_id"/>
+                <div class="page" style="position: relative; overflow: hidden; font-family: Arial, sans-serif; font-size: 8.5px; line-height: 1.08; padding-right: 12mm;">
+                    <div style="border-bottom: 1px solid #000; padding-bottom: 1px; margin-bottom: 2px; white-space: nowrap;">
+                        <span style="display: inline-block; width: 35mm; vertical-align: top; overflow: hidden;">
+                            <img src="/noels_pharmacy/static/description/logo.png" alt="Noel's Pharmacy" style="height: 14px; max-width: 34mm; object-fit: contain; object-position: left center; vertical-align: middle;"/>
+                            <span style="display: block; font-size: 5.8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                <span t-esc="pharmacy_partner.contact_address.replace('\n', ', ')"/>
+                                <span t-if="pharmacy_partner.phone"> · <span t-esc="pharmacy_partner.phone"/></span>
+                            </span>
+                        </span>
+                        <span style="float: right; text-align: right; font-size: 7.2px;">
+                            <strong>RX# <span t-esc="rx.name"/></strong><br/>
+                            Fill:
+                            <span t-if="fill.prepared_at" t-field="fill.prepared_at" t-options="{'widget': 'date'}"/>
+                            <span t-else="" t-field="fill.dispensed_at" t-options="{'widget': 'date'}"/>
+                        </span>
+                    </div>
+                    <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" t-esc="rx.patient_id.name"/>
+                    <div t-if="patient_partner.contact_address" style="font-size: 6.8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" t-esc="patient_partner.contact_address.replace('\n', ', ')"/>
+                    <div style="font-size: 11.5px; font-weight: 800; margin-top: 2px; border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 1px 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        <span t-esc="line.product_id.display_name"/>
+                    </div>
+                    <div style="font-size: 10.5px; font-weight: 800; margin: 2px 0; min-height: 8mm;" t-esc="line.dispensing_instructions"/>
+                    <div style="font-size: 8px; white-space: nowrap;">
+                        <strong>QTY:</strong> <span t-esc="line.quantity"/>
+                        <span style="margin-left: 3mm;"><strong>REFILLS:</strong> <span t-esc="rx.refills_allowed"/></span>
+                        <span t-if="line.discard_after" style="float: right;"><strong>DISCARD:</strong> <span t-field="line.discard_after"/></span>
+                    </div>
+                    <div style="font-size: 7.5px; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        <span t-if="rx.prescriber_id"><strong>DR.</strong> <span t-esc="rx.prescriber_id.name"/></span>
+                        <span style="float: right;"><strong>RPH:</strong> <span t-esc="fill.pharmacist_initials"/></span>
+                    </div>
+                    <div t-if="line.prescription_line_id.caution_instructions" style="font-size: 6.8px; font-weight: 700; margin-top: 1px;" t-esc="line.prescription_line_id.caution_instructions"/>
+                    <div t-if="fill.checkout_barcode" style="position: absolute; right: -11mm; top: 17mm; width: 38mm; height: 10mm; text-align: center; transform: rotate(90deg); transform-origin: center center;">
+                        <img t-att-src="'/report/barcode/Code128/%s?width=360&amp;height=80&amp;humanreadable=0' % fill.checkout_barcode" alt="Prescription checkout barcode" style="width: 36mm; height: 8mm;"/>
+                        <div style="font-size: 5.5px; letter-spacing: .2px;" t-esc="fill.checkout_barcode"/>
+                    </div>
+                </div>
+            </t>
+        </t>
+    </template>
+</odoo>

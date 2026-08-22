@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_order_form_pharmacy" model="ir.ui.view">
+        <field name="name">sale.order.form.pharmacy</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_pharmacy_prescription" type="object" class="oe_stat_button"
+                        icon="fa-file-text-o" invisible="not pharmacy_prescription_id">
+                    <field name="pharmacy_prescription_id" widget="statinfo" string="Prescription"/>
+                </button>
+                <button name="action_view_pharmacy_dispensing" type="object" class="oe_stat_button"
+                        icon="fa-medkit" invisible="pharmacy_dispensing_count == 0">
+                    <field name="pharmacy_dispensing_count" widget="statinfo" string="Dispensing"/>
+                </button>
+            </xpath>
+            <xpath expr="//header" position="inside">
+                <button name="action_create_pharmacy_prescription" type="object"
+                        string="Create Prescription" class="btn-secondary"
+                        groups="noels_pharmacy.group_pharmacy_user"
+                        invisible="state not in ('draft', 'sent') or pharmacy_prescription_id or (not pharmacy_requires_prescription and not pharmacy_requires_approval)"/>
+                <button name="action_view_pharmacy_prescription" type="object"
+                        string="Review Prescription" class="btn-secondary"
+                        groups="noels_pharmacy.group_pharmacy_user"
+                        invisible="not pharmacy_prescription_id"/>
+                <button name="action_create_pharmacy_dispensing" type="object"
+                        string="Create Dispensing" class="btn-secondary"
+                        groups="noels_pharmacy.group_pharmacy_pharmacist"
+                        invisible="state not in ('sale', 'done') or not pharmacy_prescription_id"/>
+                <button name="action_print_pharmacy_labels" type="object"
+                        string="Print Medication Labels" class="btn-secondary"
+                        groups="noels_pharmacy.group_pharmacy_user"
+                        invisible="not pharmacy_prescription_id"/>
+            </xpath>
+            <xpath expr="//group[@name='order_details']" position="inside">
+                <field name="pharmacy_requires_prescription" invisible="1"/>
+                <field name="pharmacy_requires_approval" invisible="1"/>
+                <field name="pharmacy_prescription_id" readonly="state not in ('draft', 'sent')"
+                       groups="noels_pharmacy.group_pharmacy_user"/>
+                <field name="pharmacy_patient_id" readonly="1"
+                       groups="noels_pharmacy.group_pharmacy_user"/>
+            </xpath>
+            <xpath expr="//field[@name='order_line']/list/field[@name='name']" position="after">
+                <field name="pharmacy_dispensing_instructions" optional="hide"
+                       groups="noels_pharmacy.group_pharmacy_user"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_pharmacy_dispensing_form_sale" model="ir.ui.view">
+        <field name="name">pharmacy.dispensing.form.sale</field>
+        <field name="model">pharmacy.dispensing</field>
+        <field name="inherit_id" ref="noels_pharmacy.view_pharmacy_dispensing_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='source_reference']" position="after">
+                <field name="sale_order_id" readonly="state != 'draft'" invisible="not sale_order_id"/>
+                <field name="stock_picking_id" readonly="state != 'draft'" invisible="not stock_picking_id"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>
