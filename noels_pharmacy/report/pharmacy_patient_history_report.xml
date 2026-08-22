@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_patient_history" model="ir.actions.report">
+        <field name="name">Patient Prescription History</field>
+        <field name="model">pharmacy.patient</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">noels_pharmacy.report_patient_history</field>
+        <field name="report_file">noels_pharmacy.report_patient_history</field>
+        <field name="binding_model_id" ref="noels_pharmacy.model_pharmacy_patient"/>
+        <field name="binding_type">report</field>
+        <field name="print_report_name">'Prescription History - %s' % object.name</field>
+        <field name="group_ids" eval="[(4, ref('noels_pharmacy.group_pharmacy_pharmacist'))]"/>
+    </record>
+    <template id="report_patient_history">
+        <t t-call="web.html_container"><t t-foreach="docs" t-as="patient"><t t-call="web.external_layout"><div class="page">
+            <h1 style="color:#0f4f9b;">Patient Prescription History</h1><h3>Noel's Pharmacy &amp; Wellness Center Ltd</h3>
+            <table class="table table-sm mt-3"><tr><th>Patient</th><td t-field="patient.name"/><th>Date of Birth</th><td t-field="patient.date_of_birth"/></tr><tr><th>Allergy Status</th><td t-field="patient.allergy_status"/><th>Generated</th><td><span t-esc="time.strftime('%d/%m/%Y %H:%M')"/></td></tr></table>
+            <h2>Recorded Allergies</h2><table class="table table-sm table-bordered"><thead><tr><th>Allergen</th><th>Reaction</th><th>Severity</th><th>Active</th></tr></thead><tbody><tr t-foreach="patient.allergy_ids" t-as="allergy"><td t-field="allergy.allergen_name"/><td t-field="allergy.reaction"/><td t-field="allergy.severity"/><td t-field="allergy.active"/></tr></tbody></table>
+            <h2>Prescription &amp; Dispensing History</h2><t t-foreach="patient.prescription_ids.sorted('prescription_date', reverse=True)" t-as="rx"><div class="mb-3"><h4><span t-field="rx.name"/> · <span t-field="rx.prescription_date"/></h4><p><strong>Doctor:</strong> <span t-field="rx.prescriber_id.name"/> · <strong>Status:</strong> <span t-field="rx.state"/> · <strong>Refills:</strong> <span t-field="rx.refills_allowed"/></p><p t-if="rx.diagnosis_notes"><strong>Diagnosis / Notes:</strong> <span t-field="rx.diagnosis_notes"/></p><table class="table table-sm table-bordered"><thead><tr><th>Medicine</th><th>Directions</th><th>Authorised</th><th>Dispensed</th><th>Remaining</th></tr></thead><tbody><tr t-foreach="rx.line_ids" t-as="line"><td t-field="line.product_id"/><td t-field="line.dispensing_instructions"/><td t-field="line.authorized_qty"/><td t-field="line.qty_dispensed"/><td t-field="line.remaining_qty"/></tr></tbody></table></div></t>
+        </div></t></t></t>
+    </template>
+</odoo>
