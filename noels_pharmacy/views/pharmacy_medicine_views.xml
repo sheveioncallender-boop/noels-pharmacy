@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_product_template_pharmacy_form" model="ir.ui.view">
+        <field name="name">product.template.pharmacy.form</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_only_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_pharmacy_expiry_records" type="object" class="oe_stat_button" icon="fa-calendar" groups="noels_pharmacy.group_pharmacy_user" invisible="not is_pharmacy_item">
+                    <field name="pharmacy_expiry_count" widget="statinfo" string="Expiry Records"/>
+                </button>
+                <button name="action_view_pharmacy_expiring_records" type="object" class="oe_stat_button" icon="fa-exclamation-circle" groups="noels_pharmacy.group_pharmacy_user" invisible="not is_pharmacy_item or pharmacy_expiring_count == 0">
+                    <field name="pharmacy_expiring_count" widget="statinfo" string="Expiring Soon"/>
+                </button>
+                <button name="action_view_pharmacy_dispensing_history" type="object" class="oe_stat_button" icon="fa-medkit" groups="noels_pharmacy.group_pharmacy_user" invisible="not is_pharmacy_item">
+                    <div class="o_stat_info"><span class="o_stat_text">Dispensing History</span></div>
+                </button>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page string="Pharmacy" name="noels_pharmacy" groups="noels_pharmacy.group_pharmacy_user">
+                    <group>
+                        <group>
+                            <field name="is_pharmacy_item"/>
+                            <field name="pharmacy_generic_name" invisible="not is_pharmacy_item"/>
+                            <field name="pharmacy_strength" invisible="not is_pharmacy_item"/>
+                            <field name="pharmacy_dosage_form" invisible="not is_pharmacy_item"/>
+                            <field name="pharmacy_default_route" invisible="not is_pharmacy_item"/>
+                            <field name="pharmacy_manufacturer" invisible="not is_pharmacy_item"/>
+                            <field name="pharmacy_registration_number" invisible="not is_pharmacy_item"/>
+                        </group>
+                        <group>
+                            <field name="pharmacy_rx_required" invisible="not is_pharmacy_item"/>
+                            <field name="pharmacy_approval_required" invisible="not is_pharmacy_item"/>
+                            <field name="pharmacy_substitution_allowed" invisible="not is_pharmacy_item"/>
+                            <field name="pharmacy_therapeutic_class_id" invisible="not is_pharmacy_item"/>
+                            <field name="pharmacy_active_ingredient_ids" widget="many2many_tags" invisible="not is_pharmacy_item"/>
+                            <field name="pharmacy_register_type_ids" widget="many2many_tags" invisible="not is_pharmacy_item"/>
+                        </group>
+                    </group>
+                    <group invisible="not is_pharmacy_item">
+                        <field name="pharmacy_default_directions"/>
+                        <field name="pharmacy_default_caution"/>
+                        <field name="pharmacy_storage_instructions"/>
+                    </group>
+                    <group string="Simple Stock Monitoring" invisible="not is_pharmacy_item">
+                        <group>
+                            <field name="pharmacy_expiry_tracking"/>
+                            <field name="pharmacy_expiry_warning_days" invisible="not pharmacy_expiry_tracking"/>
+                            <field name="pharmacy_earliest_expiry_date" readonly="1" invisible="not pharmacy_expiry_tracking"/>
+                        </group>
+                        <group>
+                            <field name="pharmacy_low_stock_threshold"/>
+                            <field name="qty_available" readonly="1" string="On Hand"/>
+                            <field name="virtual_available" readonly="1" string="Forecasted"/>
+                            <field name="pharmacy_low_stock_status" readonly="1"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_pharmacy_medicine" model="ir.actions.act_window">
+        <field name="name">Medicines</field>
+        <field name="res_model">product.template</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('is_pharmacy_item', '=', True)]</field>
+        <field name="context">{'default_is_pharmacy_item': True}</field>
+    </record>
+
+    <record id="view_pharmacy_ingredient_list" model="ir.ui.view">
+        <field name="name">pharmacy.active.ingredient.list</field>
+        <field name="model">pharmacy.active.ingredient</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="name"/>
+                <field name="code"/>
+                <field name="therapeutic_class_id"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_pharmacy_ingredient" model="ir.actions.act_window">
+        <field name="name">Active Ingredients</field>
+        <field name="res_model">pharmacy.active.ingredient</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="view_pharmacy_therapeutic_class_list" model="ir.ui.view">
+        <field name="name">pharmacy.therapeutic.class.list</field>
+        <field name="model">pharmacy.therapeutic.class</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="name"/>
+                <field name="code"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_pharmacy_therapeutic_class" model="ir.actions.act_window">
+        <field name="name">Therapeutic Classes</field>
+        <field name="res_model">pharmacy.therapeutic.class</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="view_pharmacy_interaction_rule_list" model="ir.ui.view">
+        <field name="name">pharmacy.interaction.rule.list</field>
+        <field name="model">pharmacy.interaction.rule</field>
+        <field name="arch" type="xml">
+            <list decoration-danger="severity == 'blocking'" decoration-warning="severity == 'warning'">
+                <field name="title"/>
+                <field name="ingredient_a_id"/>
+                <field name="ingredient_b_id"/>
+                <field name="severity"/>
+                <field name="source_reference"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_pharmacy_interaction_rule_form" model="ir.ui.view">
+        <field name="name">pharmacy.interaction.rule.form</field>
+        <field name="model">pharmacy.interaction.rule</field>
+        <field name="arch" type="xml">
+            <form string="Drug Interaction Rule">
+                <sheet>
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
+                    <div class="oe_title"><h1><field name="title"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="ingredient_a_id"/>
+                            <field name="ingredient_b_id"/>
+                            <field name="severity"/>
+                        </group>
+                        <group>
+                            <field name="source_reference"/>
+                            <field name="active" invisible="1"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="description"/>
+                        <field name="recommended_action"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_pharmacy_interaction_rule" model="ir.actions.act_window">
+        <field name="name">Interaction Rules</field>
+        <field name="res_model">pharmacy.interaction.rule</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

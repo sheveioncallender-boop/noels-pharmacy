@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pharmacy_register_entry_search" model="ir.ui.view">
+        <field name="name">pharmacy.register.entry.search</field>
+        <field name="model">pharmacy.register.entry</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="register_type_id"/>
+                <field name="prescription_id"/>
+                <field name="patient_id"/>
+                <field name="prescriber_id"/>
+                <field name="product_id"/>
+                <field name="lot_id"/>
+                <field name="expiry_date"/>
+                <field name="pharmacist_id"/>
+                <field name="source_reference"/>
+                <group>
+                    <filter name="group_register" string="Register" context="{'group_by': 'register_type_id'}"/>
+                    <filter name="group_product" string="Medicine" context="{'group_by': 'product_id'}"/>
+                    <filter name="group_date" string="Date" context="{'group_by': 'entry_datetime:day'}"/>
+                    <filter name="group_pharmacist" string="Pharmacist" context="{'group_by': 'pharmacist_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_pharmacy_register_entry_list" model="ir.ui.view">
+        <field name="name">pharmacy.register.entry.list</field>
+        <field name="model">pharmacy.register.entry</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0" delete="0" decoration-muted="movement_type == 'reversal'">
+                <field name="entry_datetime"/>
+                <field name="register_type_id"/>
+                <field name="movement_type"/>
+                <field name="prescription_id"/>
+                <field name="patient_id"/>
+                <field name="prescriber_id"/>
+                <field name="product_id"/>
+                <field name="lot_id" optional="hide"/>
+                <field name="expiry_date" optional="show"/>
+                <field name="quantity_in" sum="Total In"/>
+                <field name="quantity_out" sum="Total Out"/>
+                <field name="product_uom_id"/>
+                <field name="pharmacist_id"/>
+                <field name="source_reference"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pharmacy_register_entry_form" model="ir.ui.view">
+        <field name="name">pharmacy.register.entry.form</field>
+        <field name="model">pharmacy.register.entry</field>
+        <field name="arch" type="xml">
+            <form string="Register Entry" create="0" edit="0" delete="0">
+                <sheet>
+                    <div class="oe_title"><h1><field name="prescription_id"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="register_type_id"/>
+                            <field name="entry_datetime"/>
+                            <field name="movement_type"/>
+                            <field name="patient_id"/>
+                            <field name="prescriber_id"/>
+                        </group>
+                        <group>
+                            <field name="product_id"/>
+                            <field name="lot_id"/>
+                            <field name="expiry_record_id"/>
+                            <field name="expiry_date"/>
+                            <field name="quantity_in"/>
+                            <field name="quantity_out"/>
+                            <field name="product_uom_id"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="pharmacist_id"/>
+                        <field name="source_reference"/>
+                        <field name="dispensing_id"/>
+                        <field name="notes"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_pharmacy_register_all" model="ir.actions.act_window">
+        <field name="name">All Register Entries</field>
+        <field name="res_model">pharmacy.register.entry</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_pharmacy_register_entry_search"/>
+    </record>
+    <record id="action_pharmacy_register_antibiotic" model="ir.actions.act_window">
+        <field name="name">Antibiotics Register</field>
+        <field name="res_model">pharmacy.register.entry</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain" eval="[('register_type_id', '=', ref('noels_pharmacy.register_type_antibiotic'))]"/>
+        <field name="search_view_id" ref="view_pharmacy_register_entry_search"/>
+    </record>
+    <record id="action_pharmacy_register_controlled" model="ir.actions.act_window">
+        <field name="name">Controlled Drugs Register</field>
+        <field name="res_model">pharmacy.register.entry</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain" eval="[('register_type_id', '=', ref('noels_pharmacy.register_type_controlled'))]"/>
+        <field name="search_view_id" ref="view_pharmacy_register_entry_search"/>
+    </record>
+    <record id="action_pharmacy_register_narcotic" model="ir.actions.act_window">
+        <field name="name">Narcotics Register</field>
+        <field name="res_model">pharmacy.register.entry</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain" eval="[('register_type_id', '=', ref('noels_pharmacy.register_type_narcotic'))]"/>
+        <field name="search_view_id" ref="view_pharmacy_register_entry_search"/>
+    </record>
+
+    <record id="view_pharmacy_register_type_list" model="ir.ui.view">
+        <field name="name">pharmacy.register.type.list</field>
+        <field name="model">pharmacy.register.type</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_pharmacy_register_type" model="ir.actions.act_window">
+        <field name="name">Register Types</field>
+        <field name="res_model">pharmacy.register.type</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

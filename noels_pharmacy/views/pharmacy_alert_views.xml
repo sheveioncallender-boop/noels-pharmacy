@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pharmacy_clinical_alert_list" model="ir.ui.view">
+        <field name="name">pharmacy.clinical.alert.list</field>
+        <field name="model">pharmacy.clinical.alert</field>
+        <field name="arch" type="xml">
+            <list create="0" delete="0" decoration-danger="severity == 'blocking' and status == 'open'" decoration-warning="severity == 'warning' and status == 'open'" decoration-muted="status == 'superseded'">
+                <field name="prescription_id"/>
+                <field name="patient_id"/>
+                <field name="alert_type"/>
+                <field name="severity"/>
+                <field name="title"/>
+                <field name="status"/>
+                <field name="overridden_by_id"/>
+                <field name="overridden_at"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pharmacy_clinical_alert_form" model="ir.ui.view">
+        <field name="name">pharmacy.clinical.alert.form</field>
+        <field name="model">pharmacy.clinical.alert</field>
+        <field name="arch" type="xml">
+            <form string="Clinical Alert" create="0" delete="0">
+                <header>
+                    <button name="action_acknowledge" type="object" string="Acknowledge" groups="noels_pharmacy.group_pharmacy_pharmacist" invisible="status != 'open'"/>
+                    <button name="action_override" type="object" string="Approve Override" class="btn-primary" groups="noels_pharmacy.group_pharmacy_pharmacist" invisible="status not in ('open', 'acknowledged')"/>
+                    <field name="status" widget="statusbar" statusbar_visible="open,acknowledged,overridden,superseded"/>
+                </header>
+                <sheet>
+                    <div class="oe_title"><h1><field name="title" readonly="1"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="prescription_id" readonly="1"/>
+                            <field name="patient_id" readonly="1"/>
+                            <field name="alert_type" readonly="1"/>
+                            <field name="severity" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="product_ids" widget="many2many_tags" readonly="1"/>
+                            <field name="company_id" groups="base.group_multi_company" readonly="1"/>
+                        </group>
+                    </group>
+                    <field name="description" readonly="1"/>
+                    <group>
+                        <field name="override_reason" readonly="status in ('overridden', 'superseded')" placeholder="Clinical reason required before override..."/>
+                        <field name="overridden_by_id" readonly="1" invisible="status != 'overridden'"/>
+                        <field name="overridden_at" readonly="1" invisible="status != 'overridden'"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_pharmacy_clinical_alert" model="ir.actions.act_window">
+        <field name="name">Clinical Alerts</field>
+        <field name="res_model">pharmacy.clinical.alert</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

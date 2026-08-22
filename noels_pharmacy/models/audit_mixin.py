@@ -1,0 +1,137 @@
+import json
+
+from odoo import api, fields, models, _
+from odoo.exceptions import UserError
+
+
+class PharmacyAuditMixin(models.AbstractModel):
+    _name = "pharmacy.audit.mixin"
+    _description = "Pharmacy Audit Mixin"
+    _abstract = True
+
+    _pharmacy_audit_fields = ()
+
+    def _pharmacy_audit_field_names(self, values=None):
+        names = set(self._pharmacy_audit_fields)
+        if values:
+            names.update(values)
+        names.difference_update(
+            {
+                "message_follower_ids",
+                "message_partner_ids",
+                "message_ids",
+                "activity_ids",
+                "activity_state",
+                "activity_user_id",
+            }
+        )
+        return [name for name in names if name in self._fields]
+
+    def _pharmacy_audit_snapshot(self, field_names):
+        self.ensure_one()
+        if not field_names:
+            return {}
+        return self.read(field_names, load=None)[0]
+
+    def _pharmacy_create_audit_log(self, action, old_values=None, new_values=None):
+        if self.env.context.get("skip_pharmacy_audit"):
+            return
+        Audit = self.env["pharmacy.audit.log"].sudo().with_context(skip_pharmacy_audit=True)
+        for record in self:
+            company = record.company_id if "company_id" in record._fields else self.env.company
+            Audit.create(
+                {
+                    "model_name": record._name,
+                    "record_id": record.id,
+                    "record_name": record.display_name,
+                    "action": action,
+                    "old_values": old_values or {},
+                    "new_values": new_values or {},
+                    "user_id": self.env.user.id,
+                    "company_id": company.id,
+                }
+            )
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        records = super().create(vals_list)
+        if self.env.context.get("skip_pharmacy_audit"):
+            return records
+        for record, values in zip(records, vals_list):
+            fields_to_log = record._pharmacy_audit_field_names(values.keys())
+            record._pharmacy_create_audit_log(
+                "create",
+                new_values=record._pharmacy_audit_snapshot(fields_to_log),
+            )
+        return records
+
+    def write(self, values):
+        if self.env.context.get("skip_pharmacy_audit"):
+            return super().write(values)
+        fields_to_log = self._pharmacy_audit_field_names(values.keys())
+        before = {
+            record.id: record._pharmacy_audit_snapshot(fields_to_log)
+            for record in self
+        }
+        result = super().write(values)
+        for record in self:
+            record._pharmacy_create_audit_log(
+                "write",
+                old_values=before.get(record.id, {}),
+                new_values=record._pharmacy_audit_snapshot(fields_to_log),
+            )
+        return result
+
+    def unlink(self):
+        if self.env.context.get("skip_pharmacy_audit"):
+            return super().unlink()
+        for record in self:
+            fields_to_log = record._pharmacy_audit_field_names()
+            record._pharmacy_create_audit_log(
+                "unlink",
+                old_values=record._pharmacy_audit_snapshot(fields_to_log),
+            )
+        return super().unlink()
+
+
+class PharmacyAuditLog(models.Model):
+    _name = "pharmacy.audit.log"
+    _description = "Pharmacy Audit Log"
+    _order = "event_datetime desc, id desc"
+    _rec_name = "record_name"
+
+    event_datetime = fields.Datetime(required=True, default=fields.Datetime.now, readonly=True)
+    user_id = fields.Many2one("res.users", required=True, readonly=True)
+    company_id = fields.Many2one("res.company", required=True, readonly=True, index=True)
+    model_name = fields.Char(required=True, readonly=True, index=True)
+    record_id = fields.Integer(required=True, readonly=True, index=True)
+    record_name = fields.Char(required=True, readonly=True)
+    action = fields.Selection(
+        [("create", "Created"), ("write", "Changed"), ("unlink", "Deleted")],
+        required=True,
+        readonly=True,
+        index=True,
+    )
+    old_values = fields.Json(readonly=True)
+    new_values = fields.Json(readonly=True)
+    old_values_text = fields.Text(compute="_compute_value_text")
+    new_values_text = fields.Text(compute="_compute_value_text")
+
+    @api.depends("old_values", "new_values")
+    def _compute_value_text(self):
+        for log in self:
+            log.old_values_text = json.dumps(log.old_values or {}, indent=2, default=str)
+            log.new_values_text = json.dumps(log.new_values or {}, indent=2, default=str)
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        if not self.env.context.get("skip_pharmacy_audit"):
+            raise UserError(_("Audit events can only be generated by the pharmacy system."))
+        return super().create(vals_list)
+
+    def write(self, values):
+        raise UserError(_("Pharmacy audit events are immutable."))
+
+    def unlink(self):
+        raise UserError(_("Pharmacy audit events cannot be deleted."))
+

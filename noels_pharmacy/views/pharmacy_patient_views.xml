@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pharmacy_patient_search" model="ir.ui.view">
+        <field name="name">pharmacy.patient.search</field>
+        <field name="model">pharmacy.patient</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="phone"/>
+                <field name="email"/>
+                <field name="date_of_birth"/>
+                <filter name="known_allergies" string="Known Allergies" domain="[('allergy_status', '=', 'known')]"/>
+                <filter name="allergy_unconfirmed" string="Allergy Status Unconfirmed" domain="[('allergy_status', '=', 'unknown')]"/>
+                <filter name="archived" string="Archived" domain="[('active', '=', False)]"/>
+                <group>
+                    <filter name="group_company" string="Company" context="{'group_by': 'company_id'}"/>
+                    <filter name="group_allergy" string="Allergy Status" context="{'group_by': 'allergy_status'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_pharmacy_patient_list" model="ir.ui.view">
+        <field name="name">pharmacy.patient.list</field>
+        <field name="model">pharmacy.patient</field>
+        <field name="arch" type="xml">
+            <list string="Patients" decoration-danger="allergy_status == 'known'" decoration-warning="allergy_status == 'unknown'">
+                <field name="name"/>
+                <field name="date_of_birth"/>
+                <field name="age"/>
+                <field name="gender" optional="show"/>
+                <field name="phone" optional="show"/>
+                <field name="email" optional="hide"/>
+                <field name="allergy_status"/>
+                <field name="prescription_count"/>
+                <field name="partial_fill_count" optional="show"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pharmacy_patient_form" model="ir.ui.view">
+        <field name="name">pharmacy.patient.form</field>
+        <field name="model">pharmacy.patient</field>
+        <field name="arch" type="xml">
+            <form string="Patient Profile">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button type="object" name="action_view_prescriptions" class="oe_stat_button" icon="fa-medkit">
+                            <field name="prescription_count" widget="statinfo" string="Prescriptions"/>
+                        </button>
+                        <button type="object" name="action_view_dispensing_history" class="oe_stat_button" icon="fa-history">
+                            <field name="dispensing_count" widget="statinfo" string="Dispensed Items"/>
+                        </button>
+                        <button type="object" name="action_view_partial_fills" class="oe_stat_button" icon="fa-bell" invisible="partial_fill_count == 0">
+                            <field name="partial_fill_count" widget="statinfo" string="Partial Fills"/>
+                        </button>
+                    </div>
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
+                    <div class="oe_title">
+                        <label for="partner_id" string="Patient Name"/>
+                        <h1><field name="partner_id" options="{'no_create_edit': False}"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="date_of_birth"/>
+                            <field name="age" readonly="1"/>
+                            <field name="gender"/>
+                            <field name="phone"/>
+                            <field name="email" widget="email"/>
+                            <field name="guardian_partner_id"/>
+                        </group>
+                        <group>
+                            <field name="primary_doctor_id"/>
+                            <field name="blood_group"/>
+                            <field name="allergy_status" widget="radio"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="active" invisible="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Address" name="address">
+                            <group>
+                                <field name="street" placeholder="Street..."/>
+                                <field name="street2" placeholder="Street 2..."/>
+                                <field name="city"/>
+                                <field name="state_id" options="{'no_open': True}"/>
+                                <field name="zip"/>
+                                <field name="country_id" options="{'no_open': True}"/>
+                            </group>
+                        </page>
+                        <page string="Allergies" name="allergies">
+                            <field name="allergy_ids" context="{'default_patient_id': id}">
+                                <list editable="bottom" decoration-danger="severity == 'severe'" decoration-muted="not active">
+                                    <field name="active"/>
+                                    <field name="ingredient_id"/>
+                                    <field name="allergen_name"/>
+                                    <field name="reaction"/>
+                                    <field name="severity"/>
+                                    <field name="noted_date"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Emergency Contact" name="emergency_contact">
+                            <group>
+                                <group>
+                                    <field name="emergency_contact_name"/>
+                                    <field name="emergency_contact_relationship"/>
+                                </group>
+                                <group>
+                                    <field name="emergency_contact_phone"/>
+                                    <field name="emergency_contact_email" widget="email"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Clinical Notes" name="clinical_notes" groups="noels_pharmacy.group_pharmacy_pharmacist">
+                            <field name="notes" placeholder="Restricted clinical notes..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_pharmacy_patient" model="ir.actions.act_window">
+        <field name="name">Patients</field>
+        <field name="res_model">pharmacy.patient</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_pharmacy_patient_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Create the first secured patient profile</p>
+            <p>Patient profiles remain linked to native Odoo contacts and preserve complete prescription history.</p>
+        </field>
+    </record>
+</odoo>
